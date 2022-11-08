@@ -1,0 +1,213 @@
+\subsection{Developing a DDLm dictionary}
+
+\subsubsection{Overview}
+
+The following sections outline the typical steps that need to be taken
+in order to create a high-quality dictionary suitable for incorporation
+into the IUCr dictionary collection. For convenience in the following
+discussion, data names are classified into three groups: ``derived'',
+''observed'', and ``identifiers''. ``Identifier'' data names
+serve purely to identify some object or concept in the sense of distinguishing
+one thing from another, and carry no other meaning. ``Derived''
+data names have values that can be calculated from the values of other
+data names. ``Observed'' data names have values that are directly
+measured or observed. Data names that describe aspects of an experiment,
+including users, dates and equipment layout, are considered ``observed''.
+
+The initial dictionary development process should be conducted with
+the aim of describing all data names associated with the given experimental
+setup or theoretical framework. At this initial stage, how data might
+be arranged in data blocks should be ignored. By adopting this approach,
+it is easier to later clearly define the natural association between
+a data block and a single experiment or dataset.
+
+\subsubsection{Listing candidate data names}
+
+The concepts that might be present in a data file that the new dictionary
+will describe are first listed, with suitably precise definitions.
+Some useful sources of potentially relevant data names are:
+\begin{enumerate}
+\item Nouns present in the definitions, which will often correspond to identifiers.
+For each of these identifiers, data names that describe properties
+of those identifiers can also be considered
+\item Key data names, which should be provided for all non-identifier data
+names.
+\item Data files already used in the target discipline. Every scientifically
+useful value in such files can be assigned to a data name. The context
+in which these values appear will contain information about the key
+data names. For example, in hierarchical files one or more of the
+nodes of the hierarchical tree above a value often correspond to key
+data names.
+\end{enumerate}
+
+\subsubsection{Characterising data values}
+
+Each of the data names identified in the previous step should be classified
+as identifiers, observed or derived. Following this, (i) one of the
+data value types listed in <DDLm type.contents entry> is assigned;(ii)
+the key data names are listed; (iii) for any derived data names, the
+definitions are revised, if necessary, to clarify how the values are
+derived from the values of the key data names. Well-defined terminology
+from the field, and references to literature can be used to keep the
+definition short.
+
+\subsubsection{\label{subsec:Increasing-computational-usefuln}Improving computational
+usefulness and flexibility}
+
+An important reason for using a restricted language to write dictionaries
+is to convey information in a way that is easily manipulable by computer.
+Economy of expression both in data files and dictionaries is an additional
+consideration, as well as maximising flexibility for future expansion.
+The following guidelines help to achieve these goals:
+\begin{enumerate}
+\item Any data name of type 'Text' which contains information of value for
+computations should be reworked to restrict possible values to a set
+of alternatives (\cifname{_enumerated_set.*}). A separate data name
+can be defined to contain free-form text where information not otherwise
+presented can be provided. CIF dictionaries use 'special\_details'
+data names in some categories for this purpose (see, for example,
+<cross ref>). 
+\item Similarly, if the \cifname{_type.contents} attribute in a definition
+appears as a list containing differing types, or types separated by
+Boolean operators (for example \texttt{List(Real,Code)} or \texttt{Text|Real}),
+the differing elements must necessarily be processed differently,
+implying that there are differing meanings. Such definitions should
+therefore be split into two or more data names corresponding to each
+individual type.
+\item Separate data names should never be used to label individual items
+forming a set of identical objects, particularly where that set has
+no fundamental maximum size. For example, providing data names ``gas
+1'' and ``gas 2'' for gases in a gas mixture is fragile, as a three-gas
+mixture might be used in the future and there is no significance to
+which gas is assigned to which data name. A robust way to handle this
+situation is to instead assign a label to the notional set of these
+items, and then to tabulate the constituents of each combination separately.
+If we label the two data names that we wish to replace as G1 and G2,
+the detailed procedure is as follows:
+\begin{enumerate}
+\item Replace G1 and G2 in their original category with a dataname S. 
+\item Create a new looped category containing a new data name SS. SS will
+be used purely to identify combinations of values taken by G1 and
+G2, and so can take arbitrary values. Dataname S can only take values
+drawn from the values taken by SS (that is, it can only identify combinations
+that have been tabulated in the SS table).
+\item Create a data name GG for the new category. GG will take values that
+G1 and G2 could have taken. 
+\end{enumerate}
+\item (This should be part of previous paragraph, not enumerated). As a
+result, G1 and G2 are replaced by S and a new table appears, with
+two columns labelled SS and GG. By collecting all values for GG for
+which the value of SS matches S in the first table, the combination
+of values referred to in the first table can be determined. Adding
+a third item requires addition of a single line to the second table,
+and addition of a new data name to the new table is sufficient when
+adding additional information about GG in a particular mixture. Note
+that both SS and GG are key data names of the new category. Figure
+\ref{fig:poor-choice} is a worked example of this procedure for a
+gas mixture.
+\item Where there are limited choices for the value of a data name, these
+choices should be specified and a number or string assigned to them.
+So, for example, instead of a data name ``ion chamber location''
+with the description of the position left to the author, the values
+could be restricted to ``monitor'',''detector'', and ''foil''.
+\item \label{enu:If-a-set}If a set of data names are expected to take values
+that vary together, there is usually a benefit in moving them into
+a new category and creating a key data name for them. A pointer to
+this key data name will then replace them in the context in which
+they originally appeared. Application of this principle effectively
+reduces repetition. For example, as described above, each observed
+data name has a single key data name, which might be called ``measurement
+id''. However, each of the points measured in an experiment may have
+identical values for items such as the list of experimenters, proposal
+number, instrument and facility, and storing these values for every
+measurement point is obviously inefficient. In such a case, it makes
+sense to group these data names into a separate category, and create
+(for example) an ``experiment id'' key data name. Strictly speaking,
+this key data name would still need to be repeated for every measurement;
+Subsection \ref{subsec:Data-blocks} explains how data blocks are
+used to remove this requirement. \\
+Similarly, when expressing the results of a modelling calculation,
+many of the inputs into the model will form a set of parameters that
+do not vary between calculated points. These can be grouped into a
+'parameters' category and each set assigned a ``parameter id''. 
+\item Software-specific data names are only useful in proportion to the
+number of users with access to the relevant version of the software,
+or else to the extent that a data name can be linked to a reproducible
+computation through documentation or source code. The value of such
+data names is likely to decline rapidly over time and they are rarely
+suitable for archival use. Such definitions should be rephrased in
+non software-specific terms.
+\item Data names referring to the configuration of a particular instrument,
+without sufficient information to allow precise reproduction of the
+geometry, similarly decline rapidly in usefulness over time and away
+from the originating laboratory, and are not suitable for archival
+use or data transfer. Where possible, such definitions should be recast
+into generally-understood terms and use made of data names for describing
+geometry.
+\end{enumerate}
+\begin{figure}
+\begin{boxedcifdefblock}
+\begin{ciflisting}
+loop_
+   _detector.id
+   _detector.gas_1
+   _detector.gas_2
+   _detector.gas_1_percent
+   _detector.gas_2_percent
+BB1    He    N     50     50
+BB2    Ar    .    100      .
+BB3    Ar    .    100      .
+\end{ciflisting}
+\end{boxedcifdefblock}
+
+\caption{Poor choice and arrangement of data names describing detectors filled
+with gas mixtures. Items \cifname{_detector.gas_1} and \cifname{_detector.gas_2}
+are drawn from the same notional set, which could expand in the future.}
+
+\label{fig:poor-choice}
+\end{figure}
+
+\begin{figure}
+\begin{boxedcifdefblock}
+\begin{ciflisting}
+loop_
+   _detector.id
+   _detector.gas_mix
+BB1      2
+BB2      1
+BB3      1
+
+loop_
+   _gas_mix.id
+   _gas_mix.gas
+   _gas_mix.percent
+1        Ar       100
+2        He        50
+2        N         50
+\end{ciflisting}
+\end{boxedcifdefblock}
+
+\caption{Improved version of loop in Figure \ref{fig:poor-choice} }
+
+\end{figure}
+
+
+\subsubsection{\label{subsec:Data-blocks}Data blocks}
+
+Encapsulating data within data blocks enables single-valued data names
+to be lifted outside tabulations wherever necessary in the data block
+(see Section <advanced>). Therefore, in the example given in point
+\ref{enu:If-a-set} above, rather than needing to include an ``experiment
+id'' for every measurement point, the experiment id is assigned a
+single value for the whole data block, and so the appropriate value
+for each measurement point is unambiguous. Explicit mention of that
+value for every point is therefore unnecessary and the data name may
+be completely dropped from the data block. As a consequence, the data
+block contents become restricted to data for which 'experiment id'
+is constant, that is, the block contains data from a single experiment.
+When constructing a dictionary, data names that will take a single
+value in the data block should be placed into 'Set' categories. Any
+child data names of items in these 'Set' categories need not be included
+in the dictionary. Which data names to restrict in this way is essentially
+dictated by the intended meaning of a data block, for example, whether
+it contains a single experiment or a single scan.
